@@ -46,7 +46,7 @@ function init_repositories {
 }
 
 function install_basic_softwares {
-    apt-get install -y curl git build-essential unzip supervisor
+    apt-get install -y curl git build-essential unzip supervisor lrzsz
 }
 
 function install_node_yarn {
@@ -62,7 +62,7 @@ function install_others {
     apt-get remove -y apache2
     debconf-set-selections <<< "mysql-server mysql-server/root_password password ${MYSQL_ROOT_PASSWORD}"
     debconf-set-selections <<< "mysql-server mysql-server/root_password_again password ${MYSQL_ROOT_PASSWORD}"
-    apt-get install -y nginx mysql-server redis-server memcached beanstalkd sqlite3
+    apt-get install -y nginx mysql-server redis-server
     chown -R ${WWW_USER}.${WWW_USER_GROUP} /var/www/
     systemctl enable nginx.service
 }
@@ -73,13 +73,29 @@ function install_composer {
     sudo -H -u ${WWW_USER} sh -c  'cd ~ && composer config -g repo.packagist composer https://mirrors.aliyun.com/composer/'
 }
 
+function install_docker {
+    sudo apt-get update
+    sudo apt-get install ca-certificates curl gnupg lsb-release
+    sudo mkdir -p /etc/apt/keyrings
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+    sudo docker run hello-world
+    DOCKER_CONFIG=${DOCKER_CONFIG:-$HOME/.docker}
+    mkdir -p $DOCKER_CONFIG/cli-plugins
+    curl -SL https://github.com/docker/compose/releases/download/v2.11.2/docker-compose-linux-x86_64 -o $DOCKER_CONFIG/cli-plugins/docker-compose
+    chmod +x $DOCKER_CONFIG/cli-plugins/docker-compose
+    docker compose version
+}
+
 call_function init_system "正在初始化系统" ${LOG_PATH}
 call_function init_repositories "正在初始化软件源" ${LOG_PATH}
 call_function install_basic_softwares "正在安装基础软件" ${LOG_PATH}
 call_function install_php "正在安装 PHP" ${LOG_PATH}
-call_function install_others "正在安装 Mysql / Nginx / Redis / Memcached / Beanstalkd / Sqlite3" ${LOG_PATH}
+call_function install_others "正在安装 Mysql / Nginx / Redis / docker" ${LOG_PATH}
 call_function install_node_yarn "正在安装 Nodejs / Yarn" ${LOG_PATH}
 call_function install_composer "正在安装 Composer" ${LOG_PATH}
+call_function install_docker "正在安装 Docker" ${LOG_PATH}
 
 ansi --green --bold -n "安装完毕"
 ansi --green --bold "Mysql root 密码："; ansi -n --bold --bg-yellow --black ${MYSQL_ROOT_PASSWORD}
