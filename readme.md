@@ -15,13 +15,10 @@
 * PHP 7.4
 * Nginx
 * MySQL
-* Sqlite3
 * Composer
 * Nodejs 10
 * Yarn
 * Redis
-* Beanstalkd
-* Memcached
 
 ## 可选软件列表
 
